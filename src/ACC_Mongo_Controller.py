@@ -51,8 +51,8 @@ def get_race_results():
         return json.dumps(race_result, 200, {'ContentType':'application/json'})
     return json.dumps({'message': 'Session not found!'}, 500, {'ContentType':'application/json'})
 
-#@app.route("/get_available_race_results", methods=['GET'])
-#@cross_origin()
+@app.route("/get_available_race_results", methods=['GET'])
+@cross_origin()
 def get_available_race_results():
     past_races = ACC_COLLECTION.Races.find({'date': {'$gte': get_date_today()}})
     race_list = {'races': []}
