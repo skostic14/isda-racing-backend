@@ -7,7 +7,7 @@ from flask_cors import CORS, cross_origin
 from ACC_Backend_Utils import get_date_today
 import requests
 
-MONGO_LINK = 'mongodb://<HIDDEN>@<HIDDEN>/?authSource=admin'
+MONGO_LINK = 'mongodb://<HIDDEN>/?authSource=admin'
 MONGO_CLIENT = MongoClient(MONGO_LINK)
 ACC_COLLECTION = MONGO_CLIENT.isda
 
@@ -49,12 +49,12 @@ def get_race_results():
             'results': race_json['results'][session]
         }
         return json.dumps(race_result, 200, {'ContentType':'application/json'})
-    return json.dumps({'message': 'Session not found!'}, 500, {'ContentType':'application/json'})
+    return json.dumps({'message': 'Session not found!'}), 500, {'ContentType':'application/json'}
 
 @app.route("/get_available_race_results", methods=['GET'])
 @cross_origin()
 def get_available_race_results():
-    past_races = ACC_COLLECTION.Races.find({'date': {'$gte': get_date_today()}})
+    past_races = ACC_COLLECTION.Races.find({'date': {'$lte': get_date_today()}})
     race_list = {'races': []}
     for race in past_races:
         if 'r' in race['results'] and len(race['results']['r']) > 0: 
@@ -62,7 +62,7 @@ def get_available_race_results():
                 'id': race['id'],
                 'name': race['friendly_name']
             })
-    return json.dumps(race_list, 200, {'ContentType': 'application/json'})
+    return json.dumps(race_list), 200, {'ContentType': 'application/json'}
 
 if __name__ == '__main__':
     print('Server started')
