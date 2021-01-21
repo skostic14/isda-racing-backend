@@ -2,23 +2,11 @@ import sys
 import json
 import datetime
 from pymongo import MongoClient
+from ACC_Backend_Utils import get_time_from_milliseconds
 
 MONGO_LINK = 'mongodb://localhost:27017/'
 MONGO_CLIENT = MongoClient(MONGO_LINK)
 ACC_COLLECTION = MONGO_CLIENT.test
-
-
-def get_time_from_milliseconds(milli):
-    milliseconds = milli % 1000
-    seconds= (milli//1000)%60
-    minutes= (milli//(1000*60))%60
-    hours= (milli//(1000*60*60))%24
-
-    if hours == 0: 
-        if minutes == 0:
-            return '%d.%03d' % (seconds, milliseconds)
-        return '%02d:%02d.%03d' % (minutes, seconds, milliseconds)
-    return '%02d:%02d:%02d.%03d' % (hours, minutes, seconds, milliseconds)
 
 class Driver():
     def __init__(self, json_data):
