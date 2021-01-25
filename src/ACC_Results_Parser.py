@@ -52,7 +52,8 @@ class CarResult():
             'drivers': drivers_json,
             'fastest_lap': get_time_from_milliseconds(self.fastest_lap),
             'total_time': get_time_from_milliseconds(self.total_time),
-            'gap': get_time_from_milliseconds(self.gap),
+            #'gap': get_time_from_milliseconds(self.gap),
+            'gap': self.gap,
             'laps': self.lap_count
         }
 
@@ -77,14 +78,19 @@ class Session():
     def fill_gaps(self):
         if self.session_type == 'r':
             time_interval = self.car_results[0].total_time
+            prev_lap_count = self.car_results[0].lap_count
             for car in self.car_results:
-                car.gap = car.total_time - time_interval
+                if prev_lap_count != car.lap_count:
+                    car.gap = "+{:d} LAP".format(self.car_results[0].lap_count - car.lap_count)
+                else:
+                    car.gap = get_time_from_milliseconds(car.total_time - time_interval)
                 time_interval = car.total_time
+                prev_lap_count = car.lap_count
         else:
             print(self.session_type)
             time_interval = self.car_results[0].fastest_lap
             for car in self.car_results:
-                car.gap = car.fastest_lap - time_interval
+                car.gap = get_time_from_milliseconds(car.fastest_lap - time_interval)
                 time_interval = car.fastest_lap
 
 def find_sessions_by_date(date):
