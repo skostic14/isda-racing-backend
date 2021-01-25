@@ -3,10 +3,10 @@ import json
 import datetime
 from pymongo import MongoClient
 from ACC_Backend_Utils import get_time_from_milliseconds
+from ACC_Credentials import MONGO_LINK
 
-MONGO_LINK = 'mongodb://localhost:27017/'
 MONGO_CLIENT = MongoClient(MONGO_LINK)
-ACC_COLLECTION = MONGO_CLIENT.test
+ACC_COLLECTION = MONGO_CLIENT.isda
 
 class Driver():
     def __init__(self, json_data):
@@ -98,6 +98,8 @@ def upload_session(session, season_id, event_id):
     if session.session_type in season['rules']['points']:
         session_points = season['rules']['points'][session.session_type]
         for i in range(len(session_points)):
+            if i == len(points_array):
+                break
             points_array[i] = session_points[i]
 
     session_data = []
@@ -117,7 +119,8 @@ if __name__ == '__main__':
     print(session_file)
 
     # NOTE: 'rt' argument is required because of results encoding
-    session_data = json.load(open(session_file, 'rt', encoding='utf_16_le'))
+    #session_data = json.load(open(session_file, 'rt', encoding='utf_16_le'))
+    session_data = json.load(open(session_file, 'rt', encoding='utf-8'), strict=False)
     print(session_data['serverName'])
     session = Session(session_data)
     # print drivers
@@ -129,6 +132,6 @@ if __name__ == '__main__':
         'results.r': {'$exists': True, '$size': 0}#, $size: 0}'
     }
     query = ACC_COLLECTION.Races.find(no_results_query)
-    upload_session(session, 'ACC_S1_T1', 'ACC_S1_T1_monza')
+    upload_session(session, 'ACC_Pcup_S0', 'ACC_Friendly_BritishVsGerman_Zandvoort')
     for session in query:
         print(session['id'])

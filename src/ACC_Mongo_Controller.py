@@ -5,9 +5,9 @@ from pymongo import MongoClient
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 from ACC_Backend_Utils import get_date_today
+from ACC_Credentials import MONGO_LINK
 import requests
 
-MONGO_LINK = 'mongodb://<HIDDEN>/?authSource=admin'
 MONGO_CLIENT = MongoClient(MONGO_LINK)
 ACC_COLLECTION = MONGO_CLIENT.isda
 
@@ -48,10 +48,10 @@ def get_race_results():
             },
             'results': race_json['results'][session]
         }
-        return json.dumps(race_result, 200, {'ContentType':'application/json'})
+        return json.dumps(race_result), 200, {'ContentType':'application/json'}
     return json.dumps({'message': 'Session not found!'}), 500, {'ContentType':'application/json'}
 
-@app.route("/get_available_race_results", methods=['GET'])
+@app.route("/get_available_race_results/", methods=['GET'])
 @cross_origin()
 def get_available_race_results():
     past_races = ACC_COLLECTION.Races.find({'date': {'$lte': get_date_today()}})
@@ -66,5 +66,6 @@ def get_available_race_results():
 
 if __name__ == '__main__':
     print('Server started')
-    #app.run(host='0.0.0.0', port=3010, ssl_context=('cert.pem', 'key.pem'))
+    # Use this in local environment
+    #app.run(host='0.0.0.0', port=3010)
     print('Server closed')
