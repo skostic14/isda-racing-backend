@@ -125,8 +125,8 @@ if __name__ == '__main__':
     print(session_file)
 
     # NOTE: 'rt' argument is required because of results encoding
-    #session_data = json.load(open(session_file, 'rt', encoding='utf_16_le'))
-    session_data = json.load(open(session_file, 'rt', encoding='utf-8'), strict=False)
+    session_data = json.load(open(session_file, 'rt', encoding='utf_16_le'))
+    #session_data = json.load(open(session_file, 'rt', encoding='utf-8'), strict=False)
     print(session_data['serverName'])
     session = Session(session_data)
     # print drivers
@@ -138,6 +138,6 @@ if __name__ == '__main__':
         'results.r': {'$exists': True, '$size': 0}#, $size: 0}'
     }
     query = ACC_COLLECTION.Races.find(no_results_query)
-    upload_session(session, 'ACC_Pcup_S0', 'ACC_Friendly_BritishVsGerman_Zandvoort')
+    upload_session(session, 'ACC_Pcup_S0', 'ACC_Pcup_S0_hungaroring')
     for session in query:
         print(session['id'])

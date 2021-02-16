@@ -1,2 +1,3 @@
 ACC_Credentials.py
 /__pycache__
+*.json
