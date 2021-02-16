@@ -115,5 +115,5 @@ def get_season_standings():
 if __name__ == '__main__':
     print('Server started')
     # Use this in local environment
-    app.run(host='0.0.0.0', port=3010)
+    # app.run(host='0.0.0.0', port=3010)
     print('Server closed')
