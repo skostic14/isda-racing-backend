@@ -65,6 +65,25 @@ def get_available_race_results():
             })
     return json.dumps(race_list), 200, {'ContentType': 'application/json'}
 
+@app.route("/get_upcoming_races/", methods=['GET'])
+@cross_origin()
+def get_upcoming_races():
+    upcoming_races = ACC_COLLECTION.Races.find({'date': {'$gte': get_date_today()}})
+    race_list = {'races': []}
+    for race in upcoming_races:
+        track = ACC_COLLECTION.Venues.find_one({'id': race['track']})
+        race_list['races'].append({
+            'id': race['id'],
+            'name': race['friendly_name'],
+            'track': track['friendly_name'],
+            'country': track['country'],
+            'date': race['date'],
+            'start_time': race['race_start_time'],
+            'sessions': race['sessions']
+        })
+    race_list['races'].sort(key=lambda x: x['date'])
+    return json.dumps(race_list), 200, {'ContentType': 'application/json'}
+
 @app.route("/get_available_seasons/", methods=['GET'])
 @cross_origin()
 def get_available_seasons():
@@ -115,5 +134,5 @@ def get_season_standings():
 if __name__ == '__main__':
     print('Server started')
     # Use this in local environment
-    # app.run(host='0.0.0.0', port=3010)
+    #app.run(host='0.0.0.0', port=3010)
     print('Server closed')
