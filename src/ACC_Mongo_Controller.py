@@ -181,6 +181,8 @@ def team_signup():
     driver_list = []
     driver_id_list = []
     for driver_name in request_dict['drivers']:
+        if driver_name == '':
+            break
         driver = ACC_COLLECTION.Drivers.find_one({'real_name': driver_name})
         driver_list.append({'name': driver_name, 'steam_id': driver['steam_guid'], 'category': 'pro'})
         driver_id_list.append(driver['steam_guid'])
@@ -193,8 +195,8 @@ def team_signup():
 
         # Check if drivers exist in other entries of the season
         for driver in driver_list:
-            if driver['steam_guid'] in entry['drivers']:
-                return json.dumps({'message': str('Driver ' + driver['real_name'] + ' in another team')}), 500, {'ContentType':'application/json'}
+            if driver['steam_id'] in entry['drivers']:
+                return json.dumps({'message': str('Driver ' + driver['name'] + ' is in another team')}), 500, {'ContentType':'application/json'}
 
     entry_id = str(team_name.replace(' ', '') + str(car_number)).lower()
     car_name = str(car['brand'] + ' ' + car['model_name'])
@@ -229,5 +231,5 @@ def team_signup():
 if __name__ == '__main__':
     print('Server started')
     # Use this in local environment
-    #app.run(host='0.0.0.0', port=3010)
+    app.run(host='0.0.0.0', port=3010)
     print('Server closed')
