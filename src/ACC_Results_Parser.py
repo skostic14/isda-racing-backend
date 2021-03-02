@@ -52,7 +52,6 @@ class CarResult():
             'drivers': drivers_json,
             'fastest_lap': get_time_from_milliseconds(self.fastest_lap),
             'total_time': get_time_from_milliseconds(self.total_time),
-            #'gap': get_time_from_milliseconds(self.gap),
             'gap': self.gap,
             'laps': self.lap_count
         }
@@ -138,6 +137,6 @@ if __name__ == '__main__':
         'results.r': {'$exists': True, '$size': 0}#, $size: 0}'
     }
     query = ACC_COLLECTION.Races.find(no_results_query)
-    upload_session(session, 'ACC_Pcup_S0', 'ACC_Pcup_S0_hungaroring')
+    upload_session(session, 'ACC_Pcup_S0', 'ACC_Pcup_S0_spa')
     for session in query:
         print(session['id'])

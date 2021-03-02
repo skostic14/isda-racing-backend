@@ -131,6 +131,101 @@ def get_season_standings():
         return json.dumps(season['standings']), 200, {'ContentType':'application/json'}
     return json.dumps({'message': 'Season not found!'}), 500, {'ContentType':'application/json'}
 
+@app.route("/get_active_drivers", methods=['GET'])
+@cross_origin()
+def get_active_drivers():
+    active_drivers = ACC_COLLECTION.Drivers.find({'status': {'$ne': 'blocked'}})
+    drivers_list = []
+    for driver in active_drivers:
+        if driver == '':
+            break
+        drivers_list.append({
+            'real_name': driver['real_name'],
+            'country': driver['country']
+        })
+    return json.dumps({'drivers': drivers_list}), 200, {'ContentType':'application/json'}
+
+@app.route("/get_car_options", methods=['GET'])
+@cross_origin()
+def get_car_optins():
+    season_id = request.args.get('season')
+    season = ACC_COLLECTION.Seasons.find_one({'id': season_id})
+    if season is not None:
+        car_list = []
+        for car_class in season['classes']:
+            simulator = season['simulator']
+            cars_in_class = ACC_COLLECTION.Car_Types.find({'$and': [{'class': car_class}, {str('game_ids.' + simulator): {'$exists': True}}]})
+            for car in cars_in_class:
+                car_list.append({
+                    'friendly_name': str(car['brand'] + ' ' + car['model_name']),
+                    'id': car['id'],
+                    'class': car['class']
+                })
+        return json.dumps({'cars': car_list}), 200, {'ContentType':'application/json'}
+    return json.dumps({'message': 'Season not found!'}), 500, {'ContentType':'application/json'}
+
+@app.route("/team_signup", methods=['POST'])
+@cross_origin()
+def team_signup():
+    request_dict = request.get_json()
+
+    season_id = request_dict['season']
+    team_name = request_dict['teamname']
+    car_number = request_dict['car_number']
+    car_type = request_dict['car']
+    pin_code = request_dict['pin']
+
+    car = ACC_COLLECTION.Car_Types.find_one({'id': car_type})
+    season = ACC_COLLECTION.Seasons.find_one({'id': season_id})
+    registered_entries = ACC_COLLECTION.Cars.find({'id': {'$in': season['entries']}})
+    driver_list = []
+    driver_id_list = []
+    for driver_name in request_dict['drivers']:
+        driver = ACC_COLLECTION.Drivers.find_one({'real_name': driver_name})
+        driver_list.append({'name': driver_name, 'steam_id': driver['steam_guid'], 'category': 'pro'})
+        driver_id_list.append(driver['steam_guid'])
+
+    # Check for collisions with other teams
+    for entry in registered_entries:
+        # Check if the car number is already registered
+        if car_number == entry['entry_number']:
+            return json.dumps({'message': 'Car number already in use'}), 500, {'ContentType':'application/json'}
+
+        # Check if drivers exist in other entries of the season
+        for driver in driver_list:
+            if driver['steam_guid'] in entry['drivers']:
+                return json.dumps({'message': str('Driver ' + driver['real_name'] + ' in another team')}), 500, {'ContentType':'application/json'}
+
+    entry_id = str(team_name.replace(' ', '') + str(car_number)).lower()
+    car_name = str(car['brand'] + ' ' + car['model_name'])
+    
+    car_entry_dict = {
+        'id': entry_id,
+        'team': team_name,
+        'drivers': driver_id_list,
+        'entry_number': car_number,
+        'car_type': car_name,
+        'bop': {
+            'ballast': 0,
+            'restrictor': 0
+        },
+        'pin': pin_code
+    }
+    ACC_COLLECTION.Cars.insert_one(car_entry_dict)
+
+    team_entry_dict = {
+        'team_name': team_name,
+        'drivers': driver_list,
+        'category': 'pro',
+        'pin': pin_code
+    }
+    ACC_COLLECTION.Teams.insert_one(team_entry_dict)
+
+    query = {'id': season_id}
+    post = {'$push': {'entries': entry_id}}
+    ACC_COLLECTION.Seasons.update_one(query, post)
+    return json.dumps({'message': 'Sign-up successful!'}), 200, {'ContentType':'application/json'}
+
 if __name__ == '__main__':
     print('Server started')
     # Use this in local environment
