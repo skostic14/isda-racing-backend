@@ -28,7 +28,8 @@ def post_signup():
             'country': str(request_dict['country']),
             'birth_date': '1970-01-01',
             'display_name': [str(str(request_dict['name']) + ' ' + str(request_dict['nickname'] + ' ' + str(request_dict['surname'])))],
-            'real_name': str(str(request_dict['name'] + ' ' + str(request_dict['surname'])))
+            'real_name': str(str(request_dict['name'] + ' ' + str(request_dict['surname']))),
+            'discord_id': request['discordid']
         }
         ACC_COLLECTION.Drivers.insert_one(new_driver)
         return json.dumps({'message': 'Sign-up successful!'}), 200, {'ContentType':'application/json'}
@@ -230,7 +231,6 @@ def team_signup():
 @cross_origin()
 def team_update():
     request_dict = request.get_json()
-
     season_id = request_dict['season']
     team_id = request_dict['team_id']
     team_name = request_dict['teamname']
