@@ -147,7 +147,7 @@ def get_active_drivers():
 
 @app.route("/get_car_options", methods=['GET'])
 @cross_origin()
-def get_car_optins():
+def get_car_options():
     season_id = request.args.get('season')
     season = ACC_COLLECTION.Seasons.find_one({'id': season_id})
     if season is not None:
@@ -175,7 +175,6 @@ def team_signup():
     car_type = request_dict['car']
     pin_code = request_dict['pin']
 
-    car = ACC_COLLECTION.Car_Types.find_one({'id': car_type})
     season = ACC_COLLECTION.Seasons.find_one({'id': season_id})
     registered_entries = ACC_COLLECTION.Cars.find({'id': {'$in': season['entries']}})
     driver_list = []
@@ -199,14 +198,13 @@ def team_signup():
                 return json.dumps({'message': str('Driver ' + driver['name'] + ' is in another team')}), 500, {'ContentType':'application/json'}
 
     entry_id = str(team_name.replace(' ', '') + str(car_number)).lower()
-    car_name = str(car['brand'] + ' ' + car['model_name'])
     
     car_entry_dict = {
         'id': entry_id,
         'team': team_name,
         'drivers': driver_id_list,
         'entry_number': car_number,
-        'car_type': car_name,
+        'car_type': car_type,
         'bop': {
             'ballast': 0,
             'restrictor': 0
@@ -228,8 +226,94 @@ def team_signup():
     ACC_COLLECTION.Seasons.update_one(query, post)
     return json.dumps({'message': 'Sign-up successful!'}), 200, {'ContentType':'application/json'}
 
+@app.route("/team_update", methods=['POST'])
+@cross_origin()
+def team_update():
+    request_dict = request.get_json()
+
+    season_id = request_dict['season']
+    team_id = request_dict['team_id']
+    team_name = request_dict['teamname']
+    car_number = request_dict['car_number']
+    car_type = request_dict['car']
+    pin_code = request_dict['pin']
+
+    # Verify PIN Code
+    entry = ACC_COLLECTION.Cars.find_one({'id': team_id, 'pin': pin_code})
+    if entry is None:
+        return json.dumps({'message': 'Incorrect PIN provided'}), 500, {'ContentType':'application/json'}
+
+    season = ACC_COLLECTION.Seasons.find_one({'id': season_id})
+    registered_entries = ACC_COLLECTION.Cars.find({'id': {'$in': season['entries']}})
+    driver_list = []
+    driver_id_list = []
+    for driver_name in request_dict['drivers']:
+        if driver_name == '':
+            break
+        driver = ACC_COLLECTION.Drivers.find_one({'real_name': driver_name})
+        driver_list.append({'name': driver_name, 'steam_id': driver['steam_guid'], 'category': 'pro'})
+        driver_id_list.append(driver['steam_guid'])
+
+    # Check for collisions with other teams
+    for entry in registered_entries:
+        if entry['id'] == team_id:
+            continue
+        # Check if the car number is already registered
+        if car_number == entry['entry_number']:
+            return json.dumps({'message': 'Car number already in use'}), 500, {'ContentType':'application/json'}
+
+        # Check if drivers exist in other entries of the season
+        for driver in driver_list:
+            if driver['steam_id'] in entry['drivers']:
+                return json.dumps({'message': str('Driver ' + driver['name'] + ' is in another team')}), 500, {'ContentType':'application/json'}
+    
+    car_entry_dict = {
+        'id': team_id,
+        'team': team_name,
+        'drivers': driver_id_list,
+        'entry_number': car_number,
+        'car_type': car_type,
+        'bop': {
+            'ballast': 0,
+            'restrictor': 0
+        },
+        'pin': pin_code
+    }
+    query = {'id': team_id}
+    post = {'$set': car_entry_dict}
+    ACC_COLLECTION.Cars.update_one(query, post)
+    return json.dumps({'message': 'Update successful!'}), 200, {'ContentType':'application/json'}
+
+@app.route("/get_registered_teams", methods=['GET'])
+@cross_origin()
+def get_registered_teams():
+    season_id = request.args.get('season')
+    season = ACC_COLLECTION.Seasons.find_one({'id': season_id})
+    if season is not None:
+        registered_entries = ACC_COLLECTION.Cars.find({'id': {'$in': season['entries']}})
+        team_list = []
+        for entry in registered_entries:
+            driver_list = []
+            for steam_id in entry['drivers']:
+                driver = ACC_COLLECTION.Drivers.find_one({'steam_guid': steam_id})
+                driver_list.append({
+                    'name': driver['real_name'],
+                    'country': driver['country']
+                })
+            car = ACC_COLLECTION.Car_Types.find_one({'id': entry['car_type']})
+            team_list.append({
+                'id': entry['id'],
+                'team_name': entry['team'],
+                'car_id': entry['car_type'],
+                'car_name': str(car['brand'] + ' ' + car['model_name']),
+                'entry_number': entry['entry_number'],
+                'drivers': driver_list
+            })
+        return json.dumps({'teams': team_list}), 200, {'ContentType':'application/json'}
+    return json.dumps({'message': 'Season not found!'}), 500, {'ContentType':'application/json'}
+
 if __name__ == '__main__':
     print('Server started')
     # Use this in local environment
-    app.run(host='0.0.0.0', port=3010)
+    #app.run(host='0.0.0.0', port=3010)
     print('Server closed')
