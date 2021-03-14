@@ -137,6 +137,6 @@ if __name__ == '__main__':
         'results.r': {'$exists': True, '$size': 0}#, $size: 0}'
     }
     query = ACC_COLLECTION.Races.find(no_results_query)
-    upload_session(session, 'ACC_Pcup_S0', 'ACC_Pcup_S0_spa')
+    upload_session(session, 'ACC_Pcup_S0', 'ACC_Pcup_S0_monza')
     for session in query:
         print(session['id'])

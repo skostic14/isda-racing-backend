@@ -8,6 +8,8 @@ from ACC_Backend_Utils import get_date_today
 from ACC_Credentials import MONGO_LINK
 from Standings import parse_season_results
 import requests
+import firebase_admin
+from firebase_admin import auth, credentials
 
 MONGO_CLIENT = MongoClient(MONGO_LINK)
 ACC_COLLECTION = MONGO_CLIENT.isda
@@ -16,11 +18,15 @@ app = Flask(__name__)
 CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-@app.route("/signup/", methods=['POST'])
+@app.route("/signup", methods=['POST'])
 @cross_origin()
 def post_signup():
     request_dict = request.get_json()
-
+    uid='unverified'
+    if 'token' in request_dict:
+        token = request_dict['token']
+        decoded_token = auth.verify_id_token(token)
+        uid = str(decoded_token['user_id'])
     existing_driver = ACC_COLLECTION.Drivers.find_one({'steam_guid': str('S' + str(request_dict['steamid']))})
     if existing_driver is None:
         new_driver = {
@@ -29,11 +35,16 @@ def post_signup():
             'birth_date': '1970-01-01',
             'display_name': [str(str(request_dict['name']) + ' ' + str(request_dict['nickname'] + ' ' + str(request_dict['surname'])))],
             'real_name': str(str(request_dict['name'] + ' ' + str(request_dict['surname']))),
-            'discord_id': request_dict['discordid']
+            'discord_id': request_dict['discordid'],
+            'uid': uid
         }
         ACC_COLLECTION.Drivers.insert_one(new_driver)
         return json.dumps({'message': 'Sign-up successful!'}), 200, {'ContentType':'application/json'}
-
+    elif 'uid' not in existing_driver:
+        query = {'steam_guid': str('S' + str(request_dict['steamid']))}
+        post = {'$set': {'uid': uid}}
+        ACC_COLLECTION.Drivers.update_one(query, post)
+        return json.dumps({'message': 'Driver profile connected successfully'}), 200, {'ContentType': 'application/json'}
     return json.dumps({'message': 'Driver already exists!'}), 400, {'ContentType':'application/json'}
 
 @app.route("/get_race_results", methods=['GET'])
@@ -165,7 +176,7 @@ def get_car_options():
         return json.dumps({'cars': car_list}), 200, {'ContentType':'application/json'}
     return json.dumps({'message': 'Season not found!'}), 500, {'ContentType':'application/json'}
 
-@app.route("/team_signup", methods=['POST'])
+@app.route("/c", methods=['POST'])
 @cross_origin()
 def team_signup():
     request_dict = request.get_json()
@@ -174,7 +185,11 @@ def team_signup():
     team_name = request_dict['teamname']
     car_number = request_dict['car_number']
     car_type = request_dict['car']
-    pin_code = request_dict['pin']
+
+    if 'pin' in request_dict:
+        pin_code = request_dict['pin']
+    else:
+        pin_code = 'no_pin'
 
     season = ACC_COLLECTION.Seasons.find_one({'id': season_id})
     registered_entries = ACC_COLLECTION.Cars.find({'id': {'$in': season['entries']}})
@@ -312,8 +327,44 @@ def get_registered_teams():
         return json.dumps({'teams': team_list}), 200, {'ContentType':'application/json'}
     return json.dumps({'message': 'Season not found!'}), 500, {'ContentType':'application/json'}
 
+@app.route("/check_uid", methods=['POST'])
+@cross_origin()
+def check_uid():
+    request_dict = request.get_json()
+    return_dict = {'driver': None}
+    if 'token' in request_dict and request_dict['token'] is not None:
+        token = request_dict['token']
+        decoded_token = auth.verify_id_token(token)
+        uid = decoded_token['user_id']
+        driver = ACC_COLLECTION.Drivers.find_one({'uid': uid})
+        if driver is not None:
+            return_dict['driver'] = {
+                'name': driver['real_name']
+            }
+        return json.dumps(return_dict), 200, {'ContentType': 'application/json'}
+    return json.dumps(return_dict), 500, {'ContentType': 'application/json'}
+
+@app.route('/connect_uid', methods=['POST'])
+@cross_origin()
+def connect_uid():
+    request_dict = request.get_json()
+    steam_id = str('S' + str(request_dict['steamid']))
+    token = request_dict['token']
+    decoded_token = auth.verify_id_token(token)
+    uid = decoded_token['user_id']
+    existing_driver = ACC_COLLECTION.Drivers.find_one({'steam_guid': steam_id})
+    if existing_driver is not None:
+        query = {'steam_guid': steam_id}
+        post = {'$set': {'uid': uid}}
+        ACC_COLLECTION.Drivers.update_one(query, post)
+        return json.dumps({'message': 'Driver profile connected successfully'}), 200, {'ContentType': 'application/json'}
+    return json.dumps({'message': 'Steam ID does not exist in database'}), 500, {'ContentType': 'application/json'}
+
+
 if __name__ == '__main__':
     print('Server started')
+    credentials = credentials.Certificate('isda-firebase-access.json')
+    firebase_admin.initialize_app(credentials)
     # Use this in local environment
     #app.run(host='0.0.0.0', port=3010)
     print('Server closed')
