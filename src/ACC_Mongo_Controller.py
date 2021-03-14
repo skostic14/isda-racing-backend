@@ -360,11 +360,11 @@ def connect_uid():
         return json.dumps({'message': 'Driver profile connected successfully'}), 200, {'ContentType': 'application/json'}
     return json.dumps({'message': 'Steam ID does not exist in database'}), 500, {'ContentType': 'application/json'}
 
+credentials = credentials.Certificate('isda-firebase-access.json')
+firebase_admin.initialize_app(credentials)
 
 if __name__ == '__main__':
     print('Server started')
-    credentials = credentials.Certificate('isda-firebase-access.json')
-    firebase_admin.initialize_app(credentials)
     # Use this in local environment
     #app.run(host='0.0.0.0', port=3010)
     print('Server closed')
