@@ -40,11 +40,16 @@ def post_signup():
         }
         ACC_COLLECTION.Drivers.insert_one(new_driver)
         return json.dumps({'message': 'Sign-up successful!'}), 200, {'ContentType':'application/json'}
-    elif 'uid' not in existing_driver:
-        query = {'steam_guid': str('S' + str(request_dict['steamid']))}
-        post = {'$set': {'uid': uid}}
-        ACC_COLLECTION.Drivers.update_one(query, post)
-        return json.dumps({'message': 'Driver profile connected successfully'}), 200, {'ContentType': 'application/json'}
+    else:
+        if 'status' in existing_driver:
+            if existing_driver['status'] == 'blocked':
+                return json.dumps({'message': 'Driver is blocked from participating in ISDA.'}), 400, {'ContentType':'application/json'}
+
+        if 'uid' not in existing_driver:
+            query = {'steam_guid': str('S' + str(request_dict['steamid']))}
+            post = {'$set': {'uid': uid}}
+            ACC_COLLECTION.Drivers.update_one(query, post)
+            return json.dumps({'message': 'Driver profile connected successfully'}), 200, {'ContentType': 'application/json'}
     return json.dumps({'message': 'Driver already exists!'}), 400, {'ContentType':'application/json'}
 
 @app.route("/get_race_results", methods=['GET'])
@@ -336,7 +341,7 @@ def check_uid():
         token = request_dict['token']
         decoded_token = auth.verify_id_token(token)
         uid = decoded_token['user_id']
-        driver = ACC_COLLECTION.Drivers.find_one({'uid': uid})
+        driver = ACC_COLLECTION.Drivers.find_one({'uid': uid, 'status': {'$ne': 'blocked'}})
         if driver is not None:
             return_dict['driver'] = {
                 'name': driver['real_name']
@@ -354,6 +359,9 @@ def connect_uid():
     uid = decoded_token['user_id']
     existing_driver = ACC_COLLECTION.Drivers.find_one({'steam_guid': steam_id})
     if existing_driver is not None:
+        if 'status' in existing_driver:
+            if existing_driver['status'] == 'blocked':
+                return json.dumps({'message': 'Driver is blocked from participating in ISDA.'}), 400, {'ContentType':'application/json'}
         query = {'steam_guid': steam_id}
         post = {'$set': {'uid': uid}}
         ACC_COLLECTION.Drivers.update_one(query, post)
