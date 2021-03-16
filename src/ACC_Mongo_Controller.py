@@ -181,7 +181,7 @@ def get_car_options():
         return json.dumps({'cars': car_list}), 200, {'ContentType':'application/json'}
     return json.dumps({'message': 'Season not found!'}), 500, {'ContentType':'application/json'}
 
-@app.route("/c", methods=['POST'])
+@app.route("/team_signup", methods=['POST'])
 @cross_origin()
 def team_signup():
     request_dict = request.get_json()
