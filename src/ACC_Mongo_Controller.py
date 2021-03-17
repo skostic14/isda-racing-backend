@@ -219,7 +219,13 @@ def team_signup():
                 return json.dumps({'message': str('Driver ' + driver['name'] + ' is in another team')}), 500, {'ContentType':'application/json'}
 
     entry_id = str(team_name.replace(' ', '') + str(car_number)).lower()
-    
+
+    if ACC_COLLECTION.Cars.find_one({'id': entry_id}) is not None:
+        for i in range(10):
+            if ACC_COLLECTION.Cars.find_one({'id': str(entry_id + '_' + str(i))}) is None:
+                entry_id = str(entry_id + '_' + str(i))
+                break
+
     car_entry_dict = {
         'id': entry_id,
         'team': team_name,
@@ -321,11 +327,14 @@ def get_registered_teams():
                     'country': driver['country']
                 })
             car = ACC_COLLECTION.Car_Types.find_one({'id': entry['car_type']})
+            car_string = ''
+            if car is not None:
+                car_string = str(car['brand'] + ' ' + car['model_name'])
             team_list.append({
                 'id': entry['id'],
                 'team_name': entry['team'],
                 'car_id': entry['car_type'],
-                'car_name': str(car['brand'] + ' ' + car['model_name']),
+                'car_name': car_string,
                 'entry_number': entry['entry_number'],
                 'drivers': driver_list
             })
