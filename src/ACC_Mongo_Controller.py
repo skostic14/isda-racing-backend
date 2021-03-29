@@ -6,7 +6,7 @@ from flask import Flask, request
 from flask_cors import CORS, cross_origin
 from ACC_Backend_Utils import get_date_today
 from ACC_Credentials import MONGO_LINK
-from Standings import parse_season_results
+from Standings import parse_season_results, parse_season_results_multiclass
 import requests
 import firebase_admin
 from firebase_admin import auth, credentials
@@ -129,6 +129,24 @@ def update_season_standings():
             race = ACC_COLLECTION.Races.find_one({'id': race_id})
             race_list.append(race)
             race_abbreviations.append(str.upper(race['track'][0:3]))
+        if 'multiclass' in season:
+            if season['multiclass']:
+                drivers_pro, drivers_am, teams_pro, teams_am = parse_season_results_multiclass(race_list, season['entries'])
+                driver_standings = {
+                    'pro': drivers_pro,
+                    'am': drivers_am
+                }
+                team_standings = {
+                    'pro': teams_pro,
+                    'am': teams_am
+                }
+                ACC_COLLECTION.Seasons.update_one({'id': season_id}, {'$set': {
+                    'standings': {
+                        'races': race_abbreviations, 
+                        'driver_standings': driver_standings,
+                        'team_standings': team_standings
+                    }}})
+                return json.dumps({'driver_standings': driver_standings, 'team_standings': team_standings, 'races': race_abbreviations}), 200, {'ContentType':'application/json'}
         driver_standings, team_standings = parse_season_results(race_list, season['entries'])
         ACC_COLLECTION.Seasons.update_one({'id': season_id}, {'$set': {
             'standings': {
