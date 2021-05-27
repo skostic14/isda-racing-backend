@@ -49,7 +49,7 @@ class CarResult():
         self.lap_count = int(json_data['timing']['lapCount'])
         if json_data['car']['cupCategory'] == 0:
             self.split = 'pro'
-        elif json_data['car']['cupCategory'] == 1:
+        elif json_data['car']['cupCategory'] == 3:
             self.split = 'silver'
         else:
             self.split = 'am'

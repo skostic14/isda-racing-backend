@@ -107,13 +107,21 @@ def get_available_seasons():
     seasons = ACC_COLLECTION.Seasons.find({})
     season_list = {'seasons': []}
     for season in seasons:
+        race_list = []
+        for event in season['events']:
+            race = ACC_COLLECTION.Races.find_one({'id': event})
+            race_list.append({
+                'id': race['id'],
+                'friendly_name': race['friendly_name']
+            })
         season_list['seasons'].append({
             'id': season['id'],
             'name': season['friendly_name'],
             'description': season['description'],
             'banner_link': season['banner_link'],
             'simulator': season['simulator'],
-            'classes': season['classes']
+            'classes': season['classes'],
+            'races': race_list
         })
     return json.dumps(season_list), 200, {'ContentType': 'application/json'}
 
@@ -394,6 +402,73 @@ def connect_uid():
         ACC_COLLECTION.Drivers.update_one(query, post)
         return json.dumps({'message': 'Driver profile connected successfully'}), 200, {'ContentType': 'application/json'}
     return json.dumps({'message': 'Steam ID does not exist in database'}), 500, {'ContentType': 'application/json'}
+
+@app.route('/submit_report', methods=['POST'])
+@cross_origin()
+def submit_report():
+    request_dict = request.get_json()
+    race_id = request_dict['race']
+    involved_cars = list(request_dict['involved_cars'])
+    incident_location = str(request_dict['location'])
+    description = str(request_dict['description'])
+    token = request_dict['token']
+    decoded_token = auth.verify_id_token(token)
+    uid = decoded_token['user_id']
+    driver = ACC_COLLECTION.Drivers.find_one({'uid': uid})
+    if driver is not None:
+        involved_cars = [car['value'] for car in involved_cars]
+        report = {
+            'race': race_id,
+            'reported_by': driver['real_name'],
+            'involved_cars': involved_cars,
+            'incident_location': incident_location,
+            'description': description,
+            'status': 'open',
+            'resolution': []
+        }
+        ACC_COLLECTION.Incident_Reports.insert_one(report)
+        # TODO: Add call for bot
+        return json.dumps({'message': 'Incident report filed successfully'}), 200, {'ContentType': 'application/json'}
+    return json.dumps({'message': 'Failed to authenticate report'}), 500, {'ContentType': 'application/json'}
+
+@app.route('/get_incident_reports', methods=['GET'])
+@cross_origin()
+def get_incident_reports():
+    race_id = request.args.get('race')
+    report_status = request.args.get('status')
+    filter_dict = {}
+    if race_id is not None:
+        filter_dict['race'] = race_id
+    if report_status is not None:
+        filter_dict['status'] = report_status
+    reports = ACC_COLLECTION.Incident_Reports.find(filter_dict)
+    return_dict = {'incidents': []}
+    for report in reports:
+        report['id'] = report['_id']
+        return_dict['incidents'].append(report)
+    return json.dumps(return_dict), 200, {'ContentType': 'application/json'}
+
+@app.route('/rule_incident', methods=['POST'])
+@cross_origin()
+def rule_incident():
+    request_dict = request.get_json()
+    token = request_dict['token']
+    decoded_token = auth.verify_id_token(token)
+    uid = decoded_token['user_id']
+    user = ACC_COLLECTION.Drivers.find_one({'uid': uid})
+    if user is None:
+        return json.dumps({'message': 'Failed to authenticate'}), 500, {'ContentType': 'application/json'}
+    if 'role' not in user or user['role'] != 'admin':
+        return json.dumps({'message': 'Failed to authenticate'}), 500, {'ContentType': 'application/json'}
+    query = {'_id': request_dict['id']}
+    post = {'$set': {'resolution': request_dict['resolution']}}
+    ACC_COLLECTION.Incident_Reports.update_one(query, post)
+
+    #TODO: Call BOT
+    for penalty in request_dict['resolution']:
+        #TODO: Refactor results
+        continue
+    return json.dumps({'message': 'Incident ruled successfully'}), 200, {'ContentType': 'application/json'}
 
 credentials = credentials.Certificate('isda-firebase-access.json')
 firebase_admin.initialize_app(credentials)
