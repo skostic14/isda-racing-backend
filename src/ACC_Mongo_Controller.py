@@ -139,14 +139,16 @@ def update_season_standings():
             race_abbreviations.append(str.upper(race['track'][0:3]))
         if 'multiclass' in season:
             if season['multiclass']:
-                drivers_pro, drivers_am, teams_pro, teams_am = parse_season_results_multiclass(race_list, season['entries'])
+                drivers_pro, drivers_am, drivers_silver, teams_pro, teams_am, teams_silver = parse_season_results_multiclass(race_list, season['entries'])
                 driver_standings = {
                     'pro': drivers_pro,
-                    'am': drivers_am
+                    'am': drivers_am,
+                    'silver': drivers_silver
                 }
                 team_standings = {
                     'pro': teams_pro,
-                    'am': teams_am
+                    'am': teams_am,
+                    'silver': teams_silver
                 }
                 ACC_COLLECTION.Seasons.update_one({'id': season_id}, {'$set': {
                     'standings': {
