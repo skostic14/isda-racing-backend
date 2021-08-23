@@ -1,3 +1,7 @@
 ACC_Credentials.py
 /__pycache__
+/build
+/dist
+*.pyc
+*.spec
 *.json

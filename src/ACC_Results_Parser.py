@@ -22,7 +22,6 @@ class Driver():
             self.name = driver['real_name']
 
     def to_dict(self):
-        print(self.penalties)
         return {
             'name': self.name,
             'steam_guid': self.steam_id,
@@ -39,11 +38,8 @@ class CarResult():
         for driver_index in range(len(json_data['car']['drivers'])):
             new_driver = Driver(json_data['car']['drivers'][driver_index])
             if driver_index < len(json_data['driverTotalTimes']):
-                #new_driver.driving_time = get_time_from_milliseconds(json_data['driverTotalTimes'][driver_index])
                 new_driver.driving_time = int(json_data['driverTotalTimes'][driver_index])
             self.drivers.append(new_driver)
-        #self.fastest_lap = get_time_from_milliseconds(int(json_data['timing']['bestLap']))
-        #self.total_time = get_time_from_milliseconds(int(json_data['timing']['totalTime']))
         self.fastest_lap = int(json_data['timing']['bestLap'])
         self.total_time = int(json_data['timing']['totalTime'])
         self.lap_count = int(json_data['timing']['lapCount'])
@@ -81,13 +77,11 @@ class Session():
             car_result = CarResult(car)
             for penalty in json_data['penalties']:
                 if penalty['carId'] == car_result.car_id and penalty['penalty'] != 'None':
-                    print('found penalty for', penalty['carId'], penalty['penalty'])
                     car_result.drivers[penalty['driverIndex']].penalties.append({
                         'penalty': penalty['penalty'],
                         'reason': penalty['reason'],
                         'lap': penalty['violationInLap']
                     })
-                    print(car_result.drivers[penalty['driverIndex']].penalties)
             self.overall_results.append(car_result)
             if is_multiclass:
                 if car_result.split == 'pro':
@@ -120,7 +114,6 @@ class Session():
                 time_interval = car.total_time
                 prev_lap_count = car.lap_count
         else:
-            print(self.session_type)
             time_interval = results[0].fastest_lap
             for car in results:
                 car.gap = get_time_from_milliseconds(car.fastest_lap - time_interval)
@@ -192,25 +185,15 @@ def upload_session(session, season_id, event_id, is_multiclass):
 
 if __name__ == '__main__':
     session_file = input('Enter .json file_name: ')
-    print(session_file)
     season_id = input('Enter season ID: ')
     race_id = input('Enter race ID: ')
     is_multiclass = int(input('Race is multiclass? [0 - no, 1 - yes]: '))
 
     # NOTE: 'rt' argument is required because of results encoding
     session_data = json.load(open(session_file, 'rt', encoding='utf_16_le'))
-    #session_data = json.load(open(session_file, 'rt', encoding='utf-8'), strict=False)
-    print(session_data['serverName'])
     session = Session(session_data, is_multiclass)
-    # print drivers
-    for car in session.overall_results:
-        for driver in car.drivers:
-            print(driver.name)
     no_results_query = {
-        #session.session_type: '{$exists: true, $size: 0}'
-        'results.r': {'$exists': True, '$size': 0}#, $size: 0}'
+        'results.r': {'$exists': True, '$size': 0}
     }
     query = ACC_COLLECTION.Races.find(no_results_query)
     upload_session(session, season_id, race_id, is_multiclass)
-    for session in query:
-        print(session['id'])
