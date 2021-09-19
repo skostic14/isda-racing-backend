@@ -86,23 +86,23 @@ def parse_season_results(race_list, car_entry_list):
     drivers_list = []
     default_results = [''] * len(race_list)
     for i in range(len(race_list)):
-        if len(race_list[i]['results']['r']):
+        if len(race_list[i]['results']['r']['overall']):
             default_results[i] = 'DNS'
     for i in range(len(race_list)):
-        for entry in race_list[i]['results']['q']:
+        for entry in race_list[i]['results']['q']['overall']:
             # Checking if the drivers exist in the list
             drivers_ids = [driver['steam_guid'] for driver in entry['drivers']]
             drivers = next((dr for dr in drivers_list if dr.steamid == drivers_ids), None)
             if drivers is None:
                 drivers_list.append(Driver(
-                    driver_ids=drivers_ids,
+                    driver_id=drivers_ids,
                     results=deepcopy(default_results),
                     points=entry['points']
                 ))
             else:
                 drivers.points += entry['points']
         position = 1
-        for entry in race_list[i]['results']['r']:
+        for entry in race_list[i]['results']['r']['overall']:
             # Checking if the driver exists in the list
             drivers_ids = [driver['steam_guid'] for driver in entry['drivers']]
             drivers = next((dr for dr in drivers_list if dr.steamid == drivers_ids), None)
@@ -131,7 +131,7 @@ def parse_season_results(race_list, car_entry_list):
             team = next((tm for tm in teams_list if tm.name == entry['team']), None)
             if team is None:
                 teams_list.append(Team(name=entry['team'], car=entry['car_type']))
-            drivers_ids = [driver['steam_guid'] for driver in entry['drivers']]
+            drivers_ids = [driver for driver in entry['drivers']]
             drivers = next((dr for dr in drivers_list if dr.steamid == drivers_ids), None)
             if drivers is not None:
                 drivers.team = deepcopy(entry['team'])

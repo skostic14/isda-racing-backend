@@ -1,3 +1,4 @@
+import asyncio
 import http.server
 import json
 from urllib.parse import urlparse, unquote
@@ -5,16 +6,20 @@ from pymongo import MongoClient
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 from ACC_Backend_Utils import get_date_today
-from ACC_Credentials import MONGO_LINK
+from ACC_Credentials import MONGO_LINK, DISCORD_BOT_LINK
 from Standings import parse_season_results, parse_season_results_multiclass
 import requests
 import firebase_admin
 from firebase_admin import auth, credentials
-from ISDABot import ISDABot
+#from ISDABot import ISDABot
+from BotCredentials import BOT_TOKEN
+from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
+import threading
 
 MONGO_CLIENT = MongoClient(MONGO_LINK)
 ACC_COLLECTION = MONGO_CLIENT.isda
-DISCORD_BOT = ISDABot()
+#DISCORD_BOT = ISDABot()
 
 app = Flask(__name__)
 CORS(app)
@@ -430,7 +435,6 @@ def submit_report():
             'status': 'open',
             'resolution': []
         }
-        ACC_COLLECTION.Incident_Reports.insert_one(report)
         friendly_car_names = []
         for involved_car in report['involved_cars']:
             car = ACC_COLLECTION.Cars.find_one({'id': involved_car})
@@ -439,7 +443,14 @@ def submit_report():
             friendly_car_names.append(str('#' + number + ' - ' + team_name))
         report['race'] = ACC_COLLECTION.Races.find_one({'id': race_id})['friendly_name']
         report['involved_cars'] = friendly_car_names
-        DISCORD_BOT.incident_queue.put(report)
+        try:
+            requests.post(
+                DISCORD_BOT_LINK,
+                json={'incident': report}
+            )
+        except:
+            pass
+        ACC_COLLECTION.Incident_Reports.insert_one(report)
         return json.dumps({'message': 'Incident report filed successfully'}), 200, {'ContentType': 'application/json'}
     return json.dumps({'message': 'Failed to authenticate report'}), 500, {'ContentType': 'application/json'}
 
@@ -487,7 +498,7 @@ firebase_admin.initialize_app(credentials)
 
 if __name__ == '__main__':
     print('Server started')
-    DISCORD_BOT.run_bot()
     # Use this in local environment
-    #app.run(host='0.0.0.0', port=3010)
+    app.run(host='0.0.0.0', port=3010)
+    
     print('Server closed')
