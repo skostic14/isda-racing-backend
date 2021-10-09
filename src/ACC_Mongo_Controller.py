@@ -390,6 +390,10 @@ def check_uid():
             return_dict['driver'] = {
                 'name': driver['real_name']
             }
+            if 'role' in driver:
+                return_dict['driver']['role'] = driver['role']
+            else:
+                return_dict['driver']['role'] = False
         return json.dumps(return_dict), 200, {'ContentType': 'application/json'}
     return json.dumps(return_dict), 500, {'ContentType': 'application/json'}
 
@@ -492,6 +496,28 @@ def rule_incident():
         #TODO: Refactor results
         continue
     return json.dumps({'message': 'Incident ruled successfully'}), 200, {'ContentType': 'application/json'}
+
+@app.route('/get_all_tracks', methods=['GET'])
+@cross_origin()
+def get_all_tracks():
+    track_list = []
+    tracks = ACC_COLLECTION.Venues.find({})
+    for track in tracks:
+        track_list.append({
+            'id': track['id'],
+            'friendly_name': track['friendly_name']
+        })
+    return json.dumps({'tracks': track_list}), 200, {'ContentType': 'application/json'}
+
+@app.route('/create_event', methods=['POST'])
+@cross_origin()
+def create_event():
+    request_dict = request.get_json()
+    conflict = ACC_COLLECTION.Races.find_one({'id': request_dict['id']})
+    if conflict is not None:
+        return json.dumps({'message': 'Event ID is not unique'}), 500, {'ContentType': 'application/json'}
+    ACC_COLLECTION.Races.insert_one(request_dict)
+    return json.dumps({'message': 'Event scheduled correctly'}), 200, {'ContentType': 'application/json'}
 
 credentials = credentials.Certificate('isda-firebase-access.json')
 firebase_admin.initialize_app(credentials)
