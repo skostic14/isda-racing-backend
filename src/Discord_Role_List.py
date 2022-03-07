@@ -16,7 +16,7 @@ def get_discord_names(season_id):
         for steam_id in car['drivers']:
             driver = ACC_COLLECTION.Drivers.find_one({'steam_guid': steam_id})
             if 'discord_id' in driver and driver['discord_id'] is not None:
-                discord_ids.append(driver['discord_id'])
+                discord_ids.append((driver['discord_id'], driver['real_name']))
             else:
                 not_found_discord_ids.append(driver['real_name'])
     return discord_ids, not_found_discord_ids
@@ -27,8 +27,8 @@ if __name__ == '__main__':
     discord_ids, real_names = get_discord_names(season_id)
     with open('Drivers_Discord.txt', 'w', encoding="utf-8") as openfile:
         openfile.write('Found Discord IDs:\n')
-        for discord_id in discord_ids:
-            openfile.write(discord_id + '\n')
+        for discord_id, real_name in discord_ids:
+            openfile.write(real_name + ' => ' + discord_id + '\n')
         openfile.write('\nDiscord IDs not found for:\n')
         for real_name in real_names:
             openfile.write(real_name + '\n')
