@@ -519,6 +519,81 @@ def create_event():
     ACC_COLLECTION.Races.insert_one(request_dict)
     return json.dumps({'message': 'Event scheduled correctly'}), 200, {'ContentType': 'application/json'}
 
+@app.route('/get_active_seasons', methods=['GET'])
+@cross_origin()
+def get_active_seasons():
+    active_seasons = ACC_COLLECTION.Seasons.find({'status': 'open'})
+    return_array = []
+    for season in active_seasons:
+        simulator = ACC_COLLECTION.Simulators.find_one({'id': season['simulator']})
+        classes = []
+        for car_class in season['classes']:
+            classes.append(ACC_COLLECTION.Class.find_one({'id': car_class})['friendly_name'])
+        return_array.append(
+            {
+                'id': season['id'],
+                'friendly_name': season['friendly_name'],
+                'description': season['description'],
+                'description_long': season['description_long'],
+                'banner_link': season['banner_link'],
+                'simulator': simulator['friendly_name'],
+                'rules': season['rules'],
+                'events': season['events'],
+                'standings': season['standings'],
+                'entries_count': len(season['entries']),
+                'classes': classes,
+                'livery_upload_link': season['livery_upload_link']
+            }
+        )
+    return_array.reverse()
+    return json.dumps({'seasons': return_array}), 200, {'ContentType': 'application/json'}
+    
+@app.route('/get_past_seasons', methods=['GET'])
+@cross_origin()
+def get_past_seasons():
+    past_seasons = ACC_COLLECTION.Seasons.find({'status': 'closed'})
+    return_array = []
+    for season in past_seasons:
+        simulator = ACC_COLLECTION.Simulators.find_one({'id': season['simulator']})
+        classes = []
+        for car_class in season['classes']:
+            classes.append(ACC_COLLECTION.Class.find_one({'id': car_class})['friendly_name'])
+        return_array.append(
+            {
+                'id': season['id'],
+                'friendly_name': season['friendly_name'],
+                'description': season['description'],
+                'banner_link': season['banner_link'],
+                'simulator': simulator['friendly_name'],
+                'rules': season['rules'],
+                'events': season['events'],
+                'standings': season['standings'],
+                'entries_count': len(season['entries']),
+                'classes': classes
+            }
+        )
+    return_array.reverse()
+    return json.dumps({'seasons': return_array}), 200, {'ContentType': 'application/json'}
+
+@app.route('/get_events_details', methods=['POST'])
+@cross_origin()
+def get_events_details():
+    request_dict = request.get_json()
+    return_array = []
+    for event_id in request_dict['events']:
+        event = ACC_COLLECTION.Races.find_one({'id': event_id})
+        track = ACC_COLLECTION.Venues.find_one({'id': event['track']})
+        return_array.append({
+            'id': event['id'],
+            'friendly_name': event['friendly_name'],
+            'track': track['friendly_name'],
+            'sessions': event['sessions'],
+            'results': event['results'],
+            'date': event['date'],
+            'start_time': event['race_start_time']
+        })
+    return json.dumps({'events': return_array}), 200, {'ContentType': 'application/json'}
+
 credentials = credentials.Certificate('isda-firebase-access.json')
 firebase_admin.initialize_app(credentials)
 
