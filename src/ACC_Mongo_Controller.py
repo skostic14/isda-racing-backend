@@ -236,7 +236,7 @@ def team_signup():
     driver_list = []
     driver_id_list = []
     for driver_name in request_dict['drivers']:
-        if driver_name == '':
+        if not driver_name:
             break
         driver = ACC_COLLECTION.Drivers.find_one({'real_name': driver_name})
         driver_list.append({'name': driver_name, 'steam_id': driver['steam_guid'], 'category': 'pro'})
