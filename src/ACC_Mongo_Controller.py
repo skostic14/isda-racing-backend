@@ -563,6 +563,7 @@ def get_past_seasons():
                 'id': season['id'],
                 'friendly_name': season['friendly_name'],
                 'description': season['description'],
+                'description_long': season['description_long'],
                 'banner_link': season['banner_link'],
                 'simulator': simulator['friendly_name'],
                 'rules': season['rules'],
