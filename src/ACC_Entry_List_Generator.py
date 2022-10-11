@@ -1,5 +1,6 @@
 import json
 import sys
+import os.path
 from ACC_Credentials import MONGO_LINK
 from pymongo import MongoClient
 
@@ -74,20 +75,51 @@ class Entry():
             'isServerAdmin': 0
         }
 
-if (len(sys.argv) != 2):
-    sys.exit(1)
-season = ACC_COLLECTION.Seasons.find_one({'id': sys.argv[1]})
+
+manualSteamIdIndex = []
+manualEntryList = []
+if os.path.isfile('manualEntryList.json'):
+    jsonFile = open('manualEntryList.json', 'r')
+    manualEntryList = json.load(jsonFile)
+    print('Manual entry list file loaded.')
+    for entry in manualEntryList:
+        manualSteamIdIndex.append(entry['drivers'][0]['playerID'])
+
+if (len(sys.argv) == 2):
+    season = ACC_COLLECTION.Seasons.find_one({'id': sys.argv[1]})
+else:
+    seasons = ACC_COLLECTION.Seasons.find({'status': 'open'})
+    allSeasons = []
+    for season in seasons:
+        allSeasons.append(season)
+
+    print("Please choose opened season by number:\n")
+    for season in allSeasons:
+        print(allSeasons.index(season), ": \t", season["id"], " (", season["friendly_name"], ")")
+
+    seasonIndex = int(input())
+    if seasonIndex < 0 or seasonIndex > len(allSeasons):
+        season = None
+    else:
+        season = allSeasons[seasonIndex]
+
 if season is None:
     sys.exit(1)
 registered_entries = ACC_COLLECTION.Cars.find({'id': {'$in': season['entries']}})
 entry_list = []
+
 for entry in registered_entries:
     driver_list = []
     for steamid in entry['drivers']:
         driver_list.append(Driver(steamid))
+        if steamid in manualSteamIdIndex:
+            del manualEntryList[manualSteamIdIndex.index(steamid)]
     car = Entry(drivers=driver_list, car_id=entry['car_type'], number=entry['entry_number'])
     car.populate_data()
     entry_list.append(car.to_dict())
+
+for manualEntry in manualEntryList:
+    entry_list.append(manualEntry)
 
 entry_list_dict = {
     'entries': entry_list,
@@ -96,3 +128,5 @@ entry_list_dict = {
 
 with open('entrylist.json', 'w', encoding="utf-16-le") as outfile:
     json.dump(entry_list_dict, outfile, indent=2, ensure_ascii=False)
+
+print('Entry list created.')
