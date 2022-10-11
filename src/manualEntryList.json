@@ -1,0 +1,93 @@
+[
+	{
+      "drivers": [
+        {
+          "firstName": "",
+          "lastName": "Safety Car",
+          "shortName": "FCY",
+          "playerID": "S76561198027259067",
+          "driverCategory": 0
+        }
+      ],
+      "raceNumber": 900,
+      "forcedCarModel": 52,
+      "overrideDriverInfo": 1,
+      "isServerAdmin": 0
+    },
+    {
+      "drivers": [
+        {
+          "firstName": "",
+          "lastName": "Safety Car",
+          "shortName": "FCY",
+          "playerID": "S76561198048866259",
+          "driverCategory": 0
+        }
+      ],
+      "raceNumber": 900,
+      "forcedCarModel": 52,
+      "overrideDriverInfo": 1,
+      "isServerAdmin": 0
+    },
+    {
+      "drivers": [
+        {
+          "firstName": "",
+          "lastName": "Safety Car",
+          "shortName": "FCY",
+          "playerID": "S76561198114992548",
+          "driverCategory": 0
+        }
+      ],
+      "raceNumber": 900,
+      "forcedCarModel": 52,
+      "overrideDriverInfo": 1,
+      "isServerAdmin": 0
+    },
+    {
+      "drivers": [
+        {
+          "firstName": "",
+          "lastName": "Race Control",
+          "shortName": "FCY",
+          "playerID": "S76561198033853025",
+          "driverCategory": 0
+        }
+      ],
+      "raceNumber": 900,
+      "forcedCarModel": 52,
+      "overrideDriverInfo": 1,
+      "isServerAdmin": 0
+    },
+    {
+      "drivers": [
+        {
+          "firstName": "",
+          "lastName": "Race Control",
+          "shortName": "FCY",
+          "playerID": "S76561198118609733",
+          "driverCategory": 0
+        }
+      ],
+      "raceNumber": 900,
+      "forcedCarModel": 52,
+      "overrideDriverInfo": 1,
+      "isServerAdmin": 0
+    },
+    {
+      "drivers": [
+        {
+          "firstName": "",
+          "lastName": "Race Control",
+          "shortName": "FCY",
+          "playerID": "S76561198019683502",
+          "driverCategory": 0
+        }
+      ],
+      "raceNumber": 900,
+      "forcedCarModel": 52,
+      "overrideDriverInfo": 1,
+      "isServerAdmin": 0
+    }
+    
+]
