@@ -5,3 +5,4 @@ ACC_Credentials.py
 *.pyc
 *.spec
 *.json
+!manualEntryList.json
