@@ -5,4 +5,5 @@ ACC_Credentials.py
 *.pyc
 *.spec
 *.json
+*.pickle
 !manualEntryList.json
